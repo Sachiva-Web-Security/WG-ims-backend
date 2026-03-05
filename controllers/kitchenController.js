@@ -41,8 +41,8 @@ exports.updateStock = async (req, res) => {
     await db.query(
       'INSERT INTO audit_log (user_id, action, target_table, old_value, new_value) VALUES (?,?,?,?,?)',
       [req.user.id, 'STOCK_UPDATE', 'location_inventory',
-       JSON.stringify({ ingredient_id: item.ingredient_id, old: old[0]?.current_quantity }),
-       JSON.stringify({ current_quantity: item.current_quantity })]
+      JSON.stringify({ ingredient_id: item.ingredient_id, old: old[0]?.current_quantity }),
+      JSON.stringify({ current_quantity: item.current_quantity })]
     );
   }
   res.json({ message: 'Stock updated successfully' });

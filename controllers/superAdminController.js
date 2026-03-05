@@ -1,12 +1,12 @@
 const bcrypt = require('bcryptjs');
-const db     = require('../db');
+const db = require('../db');
 
 // ── Stats ──────────────────────────────────────────────────────────────────
 exports.getStats = async (req, res) => {
-  const [[{ total_users }]]       = await db.query('SELECT COUNT(*) AS total_users FROM users WHERE is_active=1');
-  const [[{ total_locations }]]   = await db.query('SELECT COUNT(*) AS total_locations FROM locations WHERE is_active=1');
+  const [[{ total_users }]] = await db.query('SELECT COUNT(*) AS total_users FROM users WHERE is_active=1');
+  const [[{ total_locations }]] = await db.query('SELECT COUNT(*) AS total_locations FROM locations WHERE is_active=1');
   const [[{ total_ingredients }]] = await db.query('SELECT COUNT(*) AS total_ingredients FROM ingredients WHERE is_active=1');
-  const [[{ critical_count }]]    = await db.query(
+  const [[{ critical_count }]] = await db.query(
     'SELECT COUNT(*) AS critical_count FROM location_inventory WHERE current_quantity < (max_quantity * 0.4)'
   );
   res.json({ total_users, total_locations, total_ingredients, critical_count });
@@ -175,8 +175,8 @@ exports.setStockLimits = async (req, res) => {
   await db.query(
     'INSERT INTO audit_log (user_id, action, target_table, old_value, new_value) VALUES (?,?,?,?,?)',
     [req.user.id, 'STOCK_LIMITS_SET', 'location_inventory',
-     JSON.stringify({ loc: req.params.locId, ing: req.params.ingId, old: old[0] }),
-     JSON.stringify({ max_quantity, min_quantity })]
+    JSON.stringify({ loc: req.params.locId, ing: req.params.ingId, old: old[0] }),
+    JSON.stringify({ max_quantity, min_quantity })]
   );
   res.json({ message: 'Stock limits updated' });
 };

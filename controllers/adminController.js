@@ -88,7 +88,7 @@ exports.dispatchSupply = async (req, res) => {
   await db.query(
     'INSERT INTO audit_log (user_id, action, target_table, target_id, new_value) VALUES (?,?,?,?,?)',
     [req.user.id, 'SUPPLY_DISPATCHED', 'supply_log', result.insertId,
-     JSON.stringify({ ingredient: ing.name, location: loc.name, quantity })]
+    JSON.stringify({ ingredient: ing.name, location: loc.name, quantity })]
   );
   res.status(201).json({ message: 'Supply dispatched', id: result.insertId });
 };
