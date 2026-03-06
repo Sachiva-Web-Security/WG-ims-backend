@@ -14,7 +14,12 @@ const allowedOrigins = [
   'http://localhost:3030',
   'http://www.Inventory.wavagrill.com',
   'https://www.Inventory.wavagrill.com',
-  'www.Inventory.wavagrill.com'
+  'www.Inventory.wavagrill.com',
+  'http://3.91.206.250',
+  'https://ims.sachiva.tech',
+  'http://ims.sachiva.tech',
+  'https://www.sachiva.tech',
+  'http://www.sachiva.tech' 
 ];
 
 app.use(cors({
