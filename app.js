@@ -15,7 +15,7 @@ const allowedOrigins = [
   'http://www.Inventory.wavagrill.com',
   'https://www.Inventory.wavagrill.com',
   'www.Inventory.wavagrill.com',
-  'http://3.91.206.250',
+  'http://31.97.202.21:3030',
   'https://Inventory.wavagrill.com',
   'http://Inventory.wavagrill.com',
   'http://localhost:3000',
