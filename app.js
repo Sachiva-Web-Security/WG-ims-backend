@@ -17,7 +17,9 @@ const allowedOrigins = [
   'www.Inventory.wavagrill.com',
   'http://3.91.206.250',
   'https://Inventory.wavagrill.com',
-  'http://Inventory.wavagrill.com'
+  'http://Inventory.wavagrill.com',
+  'http://localhost:3000',
+  'http://localhost:3001'
 ];
 
 app.use(cors({

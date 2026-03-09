@@ -51,7 +51,7 @@ exports.updateStock = async (req, res) => {
 exports.getSupplyHistory = async (req, res) => {
   const locationId = req.user.location_id;
   const [rows] = await db.query(`
-    SELECT sl.quantity_dispatched, sl.dispatched_at, sl.notes,
+    SELECT sl.id, sl.quantity_dispatched, sl.dispatched_at, sl.notes, sl.is_acknowledged,
            i.name AS ingredient_name, i.unit
     FROM supply_log sl
     JOIN ingredients i ON i.id = sl.ingredient_id
@@ -59,4 +59,39 @@ exports.getSupplyHistory = async (req, res) => {
     ORDER BY sl.dispatched_at DESC LIMIT 50
   `, [locationId]);
   res.json(rows);
+};
+
+exports.acknowledgeSupply = async (req, res) => {
+  const locationId = req.user.location_id;
+  const supplyId = req.params.id;
+
+  if (!locationId) return res.status(403).json({ error: 'No location assigned' });
+
+  // 1. Get the supply details to know how much was dispatched
+  const [supplyRows] = await db.query(
+    'SELECT ingredient_id, quantity_dispatched FROM supply_log WHERE id = ? AND location_id = ? AND is_acknowledged = 0',
+    [supplyId, locationId]
+  );
+
+  if (supplyRows.length === 0) {
+    return res.status(404).json({ error: 'Supply record not found or already acknowledged' });
+  }
+
+  const { ingredient_id, quantity_dispatched } = supplyRows[0];
+
+  // 2. Add the quantity to the location's inventory
+  await db.query(`
+    UPDATE location_inventory 
+    SET current_quantity = current_quantity + ?
+    WHERE location_id = ? AND ingredient_id = ?
+  `, [quantity_dispatched, locationId, ingredient_id]);
+
+  // 3. Mark the supply as acknowledged
+  await db.query(`
+    UPDATE supply_log 
+    SET is_acknowledged = 1 
+    WHERE id = ? AND location_id = ?
+  `, [supplyId, locationId]);
+
+  res.json({ message: 'Supply acknowledged and inventory updated' });
 };
