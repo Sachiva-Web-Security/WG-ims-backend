@@ -137,6 +137,18 @@ exports.createIngredient = async (req, res) => {
   res.status(201).json({ id: result.insertId, message: 'Ingredient created' });
 };
 
+exports.updateIngredient = async (req, res) => {
+  const { unit } = req.body;
+  if (!unit) return res.status(400).json({ error: 'unit required' });
+
+  await db.query('UPDATE ingredients SET unit=? WHERE id=?', [unit, req.params.id]);
+  await db.query(
+    'INSERT INTO audit_log (user_id, action, target_table, target_id, new_value) VALUES (?,?,?,?,?)',
+    [req.user.id, 'INGREDIENT_UPDATED', 'ingredients', req.params.id, JSON.stringify({ unit })]
+  );
+  res.json({ message: 'Ingredient unit updated' });
+};
+
 exports.deactivateIngredient = async (req, res) => {
   await db.query('UPDATE ingredients SET is_active=0 WHERE id=?', [req.params.id]);
   await db.query(

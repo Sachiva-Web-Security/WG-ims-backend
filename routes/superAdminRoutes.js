@@ -23,6 +23,7 @@ router.put('/locations/:id', ctrl.updateLocation);
 // Ingredients (Super Admin full control)
 router.get('/ingredients', ctrl.getIngredients);
 router.post('/ingredients', ctrl.createIngredient);
+router.put('/ingredients/:id', ctrl.updateIngredient);
 router.put('/ingredients/:id/deactivate', ctrl.deactivateIngredient);
 
 // Stock Config — max/min qty (Super Admin ONLY)
