@@ -71,26 +71,52 @@ exports.deactivateIngredient = async (req, res) => {
 
 // ── Supply Dispatch ────────────────────────────────────────────────────────
 exports.dispatchSupply = async (req, res) => {
-  const { location_id, ingredient_id, quantity, notes } = req.body;
-  if (!location_id || !ingredient_id || !quantity)
-    return res.status(400).json({ error: 'location_id, ingredient_id, quantity required' });
+  const { location_id, items, notes } = req.body;
+  // items should be an array of { ingredient_id, quantity }
+  if (!location_id || !items || !Array.isArray(items) || items.length === 0)
+    return res.status(400).json({ error: 'location_id and items array required' });
 
-  const [result] = await db.query(
-    'INSERT INTO supply_log (location_id, ingredient_id, quantity_dispatched, dispatched_by, notes) VALUES (?,?,?,?,?)',
-    [location_id, ingredient_id, quantity, req.user.id, notes || null]
-  );
-  await db.query(
-    'UPDATE location_inventory SET already_supplied = already_supplied + ? WHERE location_id=? AND ingredient_id=?',
-    [quantity, location_id, ingredient_id]
-  );
-  const [[ing]] = await db.query('SELECT name FROM ingredients WHERE id=?', [ingredient_id]);
-  const [[loc]] = await db.query('SELECT name FROM locations WHERE id=?', [location_id]);
-  await db.query(
-    'INSERT INTO audit_log (user_id, action, target_table, target_id, new_value) VALUES (?,?,?,?,?)',
-    [req.user.id, 'SUPPLY_DISPATCHED', 'supply_log', result.insertId,
-    JSON.stringify({ ingredient: ing.name, location: loc.name, quantity })]
-  );
-  res.status(201).json({ message: 'Supply dispatched', id: result.insertId });
+  const batch_id = `BATCH-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const dispatchResults = [];
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    for (const item of items) {
+      const { ingredient_id, quantity } = item;
+      if (!ingredient_id || !quantity) continue;
+
+      const [result] = await connection.query(
+        'INSERT INTO supply_log (batch_id, location_id, ingredient_id, quantity_dispatched, dispatched_by, notes) VALUES (?,?,?,?,?,?)',
+        [batch_id, location_id, ingredient_id, quantity, req.user.id, notes || null]
+      );
+
+      await connection.query(
+        'UPDATE location_inventory SET already_supplied = already_supplied + ? WHERE location_id=? AND ingredient_id=?',
+        [quantity, location_id, ingredient_id]
+      );
+
+      const [[ing]] = await connection.query('SELECT name FROM ingredients WHERE id=?', [ingredient_id]);
+      const [[loc]] = await connection.query('SELECT name FROM locations WHERE id=?', [location_id]);
+
+      await connection.query(
+        'INSERT INTO audit_log (user_id, action, target_table, target_id, new_value) VALUES (?,?,?,?,?)',
+        [req.user.id, 'SUPPLY_DISPATCHED', 'supply_log', result.insertId,
+        JSON.stringify({ ingredient: ing.name, location: loc.name, quantity, batch_id })]
+      );
+      dispatchResults.push({ id: result.insertId, ingredient_id });
+    }
+
+    await connection.commit();
+    res.status(201).json({ message: 'Supply dispatched', batch_id, items: dispatchResults });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Dispatch error:', error);
+    res.status(500).json({ error: 'Failed to dispatch supply batch' });
+  } finally {
+    connection.release();
+  }
 };
 
 exports.getSupplyHistory = async (req, res) => {

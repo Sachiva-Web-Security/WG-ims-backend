@@ -79,19 +79,23 @@ exports.acknowledgeSupply = async (req, res) => {
 
   const { ingredient_id, quantity_dispatched } = supplyRows[0];
 
-  // 2. Add the quantity to the location's inventory
+  // 2. Add the quantity to the location's inventory and decrease already_supplied
   await db.query(`
     UPDATE location_inventory 
-    SET current_quantity = current_quantity + ?
+    SET current_quantity = current_quantity + ?,
+        already_supplied = GREATEST(0, already_supplied - ?),
+        updated_by = ?
     WHERE location_id = ? AND ingredient_id = ?
-  `, [quantity_dispatched, locationId, ingredient_id]);
+  `, [quantity_dispatched, quantity_dispatched, req.user.id, locationId, ingredient_id]);
 
   // 3. Mark the supply as acknowledged
   await db.query(`
     UPDATE supply_log 
-    SET is_acknowledged = 1 
+    SET is_acknowledged = 1,
+        acknowledged_at = CURRENT_TIMESTAMP,
+        acknowledged_by = ?
     WHERE id = ? AND location_id = ?
-  `, [supplyId, locationId]);
+  `, [req.user.id, supplyId, locationId]);
 
   res.json({ message: 'Supply acknowledged and inventory updated' });
 };
