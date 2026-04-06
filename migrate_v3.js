@@ -41,7 +41,7 @@ async function migrate() {
     const hasAcknowledgedByColumn = existingColumns.has('acknowledged_by') || alterStatements.some((statement) => statement.includes('acknowledged_by'));
 
     if (!foreignKeys.length && hasAcknowledgedByColumn) {
-      await db.query('ALTER TABLE supply_log ADD CONSTRAINT supply_log_ibfk_1 FOREIGN KEY (acknowledged_by) REFERENCES users(id)');
+      await db.query('ALTER TABLE supply_log ADD FOREIGN KEY (acknowledged_by) REFERENCES users(id)');
     }
 
     console.log('Migration successful: supply_log acknowledgement columns are in place.');
