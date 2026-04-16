@@ -13,21 +13,30 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3030',
+  'https://localhost:3030',
   'http://www.Inventory.wavagrill.com',
   'https://www.Inventory.wavagrill.com',
   'www.Inventory.wavagrill.com',
   'http://31.97.202.21:3030',
   'https://Inventory.wavagrill.com',
   'http://Inventory.wavagrill.com',
+  'https://inventory.wavagrill.com',
+  'https://www.inventory.wavagrill.com',
+  'http://inventory.wavagrill.com',
+  'http://www.inventory.wavagrill.com',
   'http://localhost:3000',
   'http://localhost:3001'
 ];
+
+const normalizedAllowedOrigins = new Set(
+  allowedOrigins.map((o) => String(o).toLowerCase())
+);
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (normalizedAllowedOrigins.has(String(origin).toLowerCase())) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
